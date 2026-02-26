@@ -1,2 +1,2 @@
 # ITT-Umweltsensor-ESP32
-ITT-Projekt mit ESP32, DHT11, MQTT und Raspberry Pi
+Entwicklung eines IoT-Systems zur Umweltdatenerfassung mit KI-gestützter Datenanalyse auf einem lokalen Edge-Server.
