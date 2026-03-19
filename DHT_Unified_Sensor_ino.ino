@@ -10,13 +10,13 @@
 // ==========================================
 // 1. KONFIGURATION & NETZWERK
 // ==========================================
-const char* WIFI_SSID     = "FBIT.IoT.Router8";
-const char* WIFI_PASSWORD = "WueLoveIoT";
+const char* WIFI_SSID     = "deine WLAN_SSID";
+const char* WIFI_PASSWORD = "dein_PASS";
 
-const char* MQTT_HOST_NAME = "11FI6-turbo"; 
+const char* MQTT_HOST_NAME = "11FI6-turbo"; //hostname
 const uint16_t MQTT_PORT   = 1883;
-const char* MQTT_USER      = "mqttuser";
-const char* MQTT_PASS      = "SchrottKiste";
+const char* MQTT_USER      = "dein mqtt user";
+const char* MQTT_PASS      = "dein mqtt pasword";
 
 const char* TOPIC_PUB      = "sensors/esp32/data";
 const char* TOPIC_CMD      = "sensors/esp32/cmd";
