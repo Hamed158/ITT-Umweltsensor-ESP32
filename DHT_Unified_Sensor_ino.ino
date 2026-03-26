@@ -1,3 +1,4 @@
+#include <ArduinoJson.h> 
 #include <WiFi.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
@@ -6,17 +7,19 @@
 #include <time.h>
 #include <PubSubClient.h>
 #include <ESPmDNS.h>
+#include <WebServer.h>
+
 
 // ==========================================
 // 1. KONFIGURATION & NETZWERK
 // ==========================================
-const char* WIFI_SSID     = "deine WLAN_SSID";
-const char* WIFI_PASSWORD = "dein_PASS";
+const char* WIFI_SSID     = "wlan-SSID";
+const char* WIFI_PASSWORD = "wlan_passwort";
 
-const char* MQTT_HOST_NAME = "11FI6-turbo"; //hostname
+const char* MQTT_HOST_NAME = "11FI6-turbo"; // Raspi hostname 
 const uint16_t MQTT_PORT   = 1883;
-const char* MQTT_USER      = "dein mqtt user";
-const char* MQTT_PASS      = "dein mqtt pasword";
+const char* MQTT_USER      = "mqttuser"; //mqttuser name 
+const char* MQTT_PASS      = "mqtt_Password"; 
 
 const char* TOPIC_PUB      = "sensors/esp32/data";
 const char* TOPIC_CMD      = "sensors/esp32/cmd";
@@ -43,13 +46,21 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 WiFiClient wifiClient;
 PubSubClient mqtt(wifiClient);
 IPAddress resolvedPiIP;
+WebServer server(80); // Erstellt den Server auf Port 80
 
 unsigned long lastPub = 0;
 const unsigned long pubMs = 5000;
 unsigned long lastWifiCheck = 0;
 
 char lastAiMsg[32] = "Warte auf Pi...";
+char lastWebAiMsg[512] = "System bereit";  // NEU: Für die Webseite (viel größer!)
 bool timeSynced = false;
+
+//
+float t = 0.0; 
+float h = 0.0;
+int l = 0;
+long d = 0;
 
 // ==========================================
 // 4. HILFSFUNKTIONEN (ULTRASCHALL & ZEIT)
@@ -71,18 +82,88 @@ void setupTime() {
   Serial.println("NTP Zeit-Sync gestartet...");
 }
 
+void handleRoot() {
+  // Logik für Licht-Text
+  String lichtText = (l == 0) ? "HELL" : "DUNKEL";
+  String lichtFarbe = (l == 0) ? "#ffcc00" : "#2c3e50"; // Gelb für hell, Dunkelblau für dunkel
+
+  String html = "<!DOCTYPE html><html lang='de'>";
+  html += "<head><meta name='viewport' content='width=device-width, initial-scale=1' charset='utf-8'>";
+  html += "<meta http-equiv='refresh' content='5'>"; 
+  html += "<style>";
+  html += "body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background-color: #eef2f7; margin: 0; padding: 20px; color: #333; }";
+  html += ".container { max-width: 500px; margin: auto; background: white; padding: 30px; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); }";
+  html += "h1 { color: #1a73e8; margin-bottom: 25px; font-size: 26px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; }";
+  html += ".grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }";
+  html += ".card { background: #f8f9fa; padding: 20px; border-radius: 15px; border-bottom: 4px solid #1a73e8; }";
+  html += ".full-card { grid-column: span 2; }";
+  html += ".label { font-size: 12px; color: #7f8c8d; text-transform: uppercase; letter-spacing: 1px; }";
+  html += ".value { font-size: 24px; font-weight: bold; margin-top: 5px; }";
+  html += ".ki-box { background: #fff; border: 2px solid #1a73e8; padding: 20px; border-radius: 15px; margin-top: 25px; text-align: left; line-height: 1.6; }";
+  html += ".net-info { font-size: 11px; color: #bdc3c7; margin-top: 20px; background: #34495e; color: white; padding: 10px; border-radius: 10px; }";
+  html += ".status-dot { height: 10px; width: 10px; background-color: #2ecc71; border-radius: 50%; display: inline-block; margin-right: 5px; }";
+  html += "</style></head><body>";
+  
+  html += "<div class='container'>";
+  html += "<h1>Room-Monitoring Smart System</h1>";
+  
+  html += "<div class='grid'>";
+  // Temperatur & Luftfeuchtigkeit
+  html += "<div class='card'><div class='label'>Temperatur</div><div class='value'>" + String(t, 1) + " °C</div></div>";
+  html += "<div class='card'><div class='label'>Feuchte</div><div class='value'>" + String(h, 0) + " %</div></div>";
+  
+  // Licht & Distanz
+  html += "<div class='card'><div class='label'>Licht</div><div class='value' style='color:" + lichtFarbe + "'>" + lichtText + "</div></div>";
+  html += "<div class='card'><div class='label'>Distanz</div><div class='value'>" + String(d) + " cm</div></div>";
+  
+  // KI Bereich (Groß)
+ // KI Bereich (Groß und schön)
+  html += "<div class='card full-card'>"; // Öffnet die Karte
+    html += "<div class='label' style='color:#1a73e8; font-weight:bold;'>🤖 KI Analyse & Empfehlung:</div>";
+    html += "<div style='margin-top:10px; font-size: 16px; line-height: 1.5;'>";
+      html += String(lastWebAiMsg); // Hier die LANGE Nachricht für die Webseite
+    html += "</div>";
+  html += "</div>"; // Schließt die Karte
+  
+  html += "</div>"; // Schließt das Grid (Grid Ende)
+
+  // Netzwerk Infos
+  html += "<div class='net-info'>";
+  html += "<span><span class='status-dot'></span> System Online</span><br>";
+  html += "Device: ESP32-Sensor-Node | IP: " + WiFi.localIP().toString() + "<br>";
+  html += "WLAN: " + String(WIFI_SSID) + " | Signal: " + String(WiFi.RSSI()) + " dBm";
+  html += "</div>";
+  
+  html += "</div></body></html>";
+
+  server.send(200, "text/html", html);
+}
 // ==========================================
 // 5. MQTT CALLBACK (Empfängt KI-Nachrichten)
 // ==========================================
+
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Nachricht vom Pi: ");
-  unsigned int i;
-  for (i = 0; i < length && i < sizeof(lastAiMsg) - 1; i++) {
-    lastAiMsg[i] = (char)payload[i];
+  // 1. JSON-Dokument erstellen
+  StaticJsonDocument<1024> doc; // 1024 Bytes Platz für die lange Nachricht
+
+  // 2. Das Paket vom Pi auspacken
+  DeserializationError error = deserializeJson(doc, payload, length);
+
+  if (!error) {
+    // 3. Den kurzen Teil fürs OLED extrahieren
+    const char* oledPart = doc["oled"] | "Status OK";
+    strlcpy(lastAiMsg, oledPart, sizeof(lastAiMsg));
+
+    // 4. Den langen Teil für die Webseite extrahieren
+    const char* webPart = doc["web"] | "System läuft stabil.";
+    strlcpy(lastWebAiMsg, webPart, sizeof(lastWebAiMsg));
+    
+    Serial.println("Daten erfolgreich entpackt!");
+  } else {
+    Serial.print("JSON Fehler: ");
+    Serial.println(error.f_str());
   }
-  lastAiMsg[i] = '\0';
-  Serial.println(lastAiMsg);
-}
+} 
 
 // ==========================================
 // 6. VERBINDUNGS-MANAGEMENT (STABILITÄT)
@@ -144,14 +225,33 @@ void setup() {
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   MDNS.begin("esp32-sensor");
   setupTime();
+
+  // Webserver Routen definieren
+  server.on("/", handleRoot); 
+  server.begin();
+  Serial.println("HTTP Webserver gestartet");
+
+  // mDNS starten (optional, damit du http://raummonitor.local im Browser tippen kannst)
+  if (MDNS.begin("raummonitor")) {
+    Serial.println("mDNS Responder gestartet: http://raummonitor.local");
+  }
 }
 
 // ==========================================
 // 8. HAUPTSCHLEIFE (LOOP)
 // ==========================================
 void loop() {
+  server.handleClient(); 
   ensureConnections();
   if (mqtt.connected()) mqtt.loop();
+
+  // WICHTIG: Hier kein "float" oder "long" davor schreiben! 
+  // Nur die Werte zuweisen:
+  h = dht.readHumidity();
+  t = dht.readTemperature();
+  l = digitalRead(LIGHT_PIN); 
+  d = getDistance();
+  
 
   // Sensoren auslesen
   float h = dht.readHumidity();
