@@ -1,70 +1,60 @@
-# ITT-Umweltsensor-ESP32
-# Entwicklung eines IoT-Systems zur Umweltdatenerfassung mit KI-gestützter Datenanalyse auf einem lokalen Edge-Server.
-# IoT-Umweltsystem mit KI-Analyse
+🌍 KI-gestütztes IoT-Umwelt-Dashboard (Edge Computing)
+Entwicklung eines intelligenten IoT-Systems zur Umweltdatenerfassung mit lokaler KI-Analyse auf einem Raspberry Pi und einem interaktiven Web-Dashboard auf dem ESP32.
 
-Projektübersicht:
-Dieses Projekt ist ein IoT-System zur Erfassung von Umweltdaten mit anschließender KI-gestützter Analyse auf einem lokalen Server.
-Ein Mikrocontroller erfasst Sensordaten und überträgt diese per MQTT an einen Raspberry Pi.
-Der Raspberry Pi verarbeitet die Daten und analysiert sie mithilfe eines lokalen KI-Servers.
+🚀 Highlights & Neue Features
+Duales Interface: Live-Status auf einem physischen OLED-Display und ein detailliertes Web-Dashboard (HTTP-Server).
 
-Projektziel:
-Ziel des Projektes ist der Aufbau eines verteilten IoT-Systems mit:
-Sensordatenerfassung
-Netzwerkkommunikation über MQTT
-Edge-Computing auf einem lokalen Server
-KI-basierter Datenauswertung
+Edge-KI Integration: Lokale Datenverarbeitung mit Ollama (Qwen2) auf dem Raspberry Pi – 100% datenschutzkonform ohne Cloud.
 
-Verwendete Hardware:
-ESP32
-DHT11 (Temperatur & Luftfeuchtigkeit)
-HC-SR04 Ultraschallsensor (Abstand / Hindernis)
-Lichtsensor (Helligkeit)
-Raspberry Pi 4
-Breadboard & Jumper-Kabel
+Intelligentes JSON-Parsing: Der ESP32 verarbeitet komplexe Datenpakete und trennt kurze Statusmeldungen für das Display von ausführlichen Empfehlungen für die Webseite.
 
-Verwendete Software:
-Arduino IDE
-Mqtt Explorer (MQTT Broker)
-Raspberry Pi OS
-Python (MQTT Subscriber & KI-Analyse)
-Ollama (Lokaler KI-Server)
+Automatisierung: Vollständiger Autostart-Service (systemd) auf dem Raspberry Pi für 24/7 Betrieb.
 
-Systemarchitektur:
-ESP32 liest Sensordaten
-Temperatur
-Luftfeuchtigkeit
-Helligkeit
-Abstand
-Daten werden per MQTT an den Raspberry Pi gesendet.
+🛠 Hardware
+Controller: ESP32 (NodeMCU)
 
-Der Raspberry Pi:
-Empfängt die Daten
-Speichert sie (optional)
-Analysiert sie mit einem lokalen KI-Modell
+Sensoren: * DHT11 (Temperatur & Luftfeuchtigkeit)
 
-MQTT Topics (Beispiel):
-iot/temperature
-iot/humidity
-iot/light
-iot/distance
+HC-SR04 (Ultraschall-Distanz)
 
-KI-Funktion:
-Die KI bewertet eingehende Sensordaten und gibt eine textuelle Interpretation aus, z. B.:
-„Die Temperatur ist sehr hoch.“
-„Ein Hindernis befindet sich in geringer Entfernung.“
-„Die Lichtintensität ist stark.“
-Die Verarbeitung erfolgt lokal auf dem Raspberry Pi (Edge-Computing).
+LDR (Lichtintensität via Fotowiderstand)
 
- Projektstruktur:
+Display: SSD1306 OLED (I2C)
+
+Zentrale: Raspberry Pi 4 (8GB) als MQTT-Broker & KI-Server
+
+💻 Software-Stack
+Firmware: C++ / Arduino Framework (PubSubClient, ArduinoJson, WebServer)
+
+Kommunikation: MQTT (Mosquitto Broker)
+
+Backend: Python 3 (paho-mqtt)
+
+KI-Engine: Ollama (Modell: qwen2:0.5b)
+
+Datenhaltung: Lokales CSV-Logging für Langzeitanalysen
+
+📐 Systemarchitektur
+Erfassung: ESP32 liest Sensoren und sendet JSON-Rohdaten via MQTT.
+
+Verarbeitung: Python-Skript auf dem Pi empfängt Daten, loggt diese in eine CSV und generiert einen KI-Kontext.
+
+Analyse: Ollama erstellt eine Handlungsanweisung (z.B. "Lüften empfohlen").
+
+Feedback: Die KI-Antwort wird als JSON zurück an den ESP32 gesendet.
+
+Visualisierung: ESP32 zeigt die Daten im lokalen Web-Dashboard (/) und auf dem OLED-Display an.
+
+📂 Projektstruktur
+Plaintext
 IoT-KI-Umweltsystem/
-│
-├── esp32/
-├── raspi/
-├── docs/
-└── bilder/
+├── esp32/              # C++ Code für Sensoren, MQTT & Webserver
+├── raspi/              # Python-Skript (Brain) & Systemd-Service
+├── data/               # CSV-Logdateien
+├── docs/               # Dokumentation & Diagramme
+└── assets/             # Screenshots vom Web-Dashboard
+📈 Zukünftige Erweiterungen
+Anbindung einer InfluxDB zur grafischen Auswertung mit Grafana.
 
-Erweiterungsmöglichkeiten:
-Web-Dashboard
-Datenbank (z. B. SQLite)
-Automatische Warnmeldungen
+Erweiterung um einen Gassensor (MQ-135) zur Luftqualitätsmessung.
 Grafische Auswertung der Sensordaten
