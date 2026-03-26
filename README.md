@@ -1,60 +1,29 @@
-🌍 KI-gestütztes IoT-Umwelt-Dashboard (Edge Computing)
-Entwicklung eines intelligenten IoT-Systems zur Umweltdatenerfassung mit lokaler KI-Analyse auf einem Raspberry Pi und einem interaktiven Web-Dashboard auf dem ESP32.
+ITT-Projekt: Raum-Monitor mit lokaler KI
+Dieses Projekt kombiniert klassische Sensordatenerfassung mit einer lokalen KI-Auswertung. Der Fokus lag dabei auf Edge Computing – also die Datenverarbeitung direkt vor Ort auf einem Raspberry Pi zu machen, statt sie in eine Cloud zu schicken.
 
-🚀 Highlights & Neue Features
-Duales Interface: Live-Status auf einem physischen OLED-Display und ein detailliertes Web-Dashboard (HTTP-Server).
+Was das System macht
+Ein ESP32 sammelt Daten von verschiedenen Sensoren (Temperatur, Licht, Abstand) und schickt diese per MQTT an einen Raspberry Pi. Dort läuft ein Python-Skript, das die Werte in eine CSV-Datei loggt und gleichzeitig das KI-Modell Qwen2 (via Ollama) fragt, was es von den aktuellen Werten hält. Die Antwort wird zurück an den ESP32 gesendet.
 
-Edge-KI Integration: Lokale Datenverarbeitung mit Ollama (Qwen2) auf dem Raspberry Pi – 100% datenschutzkonform ohne Cloud.
+Die Besonderheiten beim Aufbau
+Duale Anzeige: Die KI-Antwort wird geteilt. Auf dem kleinen OLED-Display am Gerät erscheint nur ein kurzes Fazit (z.B. "Lüften!"), während auf dem Web-Dashboard des ESP32 der komplette Text der KI steht.
 
-Intelligentes JSON-Parsing: Der ESP32 verarbeitet komplexe Datenpakete und trennt kurze Statusmeldungen für das Display von ausführlichen Empfehlungen für die Webseite.
+Eigener Webserver: Der ESP32 hostet eine Webseite, auf der man die Live-Daten und die KI-Empfehlung im Browser sehen kann.
 
-Automatisierung: Vollständiger Autostart-Service (systemd) auf dem Raspberry Pi für 24/7 Betrieb.
+Autostart: Damit man nicht jedes Mal alles händisch starten muss, habe ich auf dem Pi einen Systemd-Service eingerichtet. Sobald der Pi Strom bekommt, läuft das Skript im Hintergrund los.
 
-🛠 Hardware
-Controller: ESP32 (NodeMCU)
+Hardware-Setup
+ESP32 als Haupteinheit.
 
-Sensoren: * DHT11 (Temperatur & Luftfeuchtigkeit)
+DHT11 & HC-SR04 & LDR für die Umgebungswerte.
 
-HC-SR04 (Ultraschall-Distanz)
+SSD1306 OLED für die lokale Anzeige.
 
-LDR (Lichtintensität via Fotowiderstand)
+Raspberry Pi 4 als MQTT-Broker und KI-Server.
 
-Display: SSD1306 OLED (I2C)
+Warum die KI-Lösung?
+Klar könnte man auch einfach if-else Regeln schreiben (z.B. wenn Temp > 25, dann Warnung). Die KI kann aber mehrere Sensoren gleichzeitig bewerten und gibt natürlichere Tipps. Da das Modell lokal auf dem Pi läuft, bleiben alle Daten privat im eigenen Netzwerk.
 
-Zentrale: Raspberry Pi 4 (8GB) als MQTT-Broker & KI-Server
-
-💻 Software-Stack
-Firmware: C++ / Arduino Framework (PubSubClient, ArduinoJson, WebServer)
-
-Kommunikation: MQTT (Mosquitto Broker)
-
-Backend: Python 3 (paho-mqtt)
-
-KI-Engine: Ollama (Modell: qwen2:0.5b)
-
-Datenhaltung: Lokales CSV-Logging für Langzeitanalysen
-
-📐 Systemarchitektur
-Erfassung: ESP32 liest Sensoren und sendet JSON-Rohdaten via MQTT.
-
-Verarbeitung: Python-Skript auf dem Pi empfängt Daten, loggt diese in eine CSV und generiert einen KI-Kontext.
-
-Analyse: Ollama erstellt eine Handlungsanweisung (z.B. "Lüften empfohlen").
-
-Feedback: Die KI-Antwort wird als JSON zurück an den ESP32 gesendet.
-
-Visualisierung: ESP32 zeigt die Daten im lokalen Web-Dashboard (/) und auf dem OLED-Display an.
-
-📂 Projektstruktur
-Plaintext
-IoT-KI-Umweltsystem/
-├── esp32/              # C++ Code für Sensoren, MQTT & Webserver
-├── raspi/              # Python-Skript (Brain) & Systemd-Service
-├── data/               # CSV-Logdateien
-├── docs/               # Dokumentation & Diagramme
-└── assets/             # Screenshots vom Web-Dashboard
-📈 Zukünftige Erweiterungen
+Zukünftige Erweiterungen
 Anbindung einer InfluxDB zur grafischen Auswertung mit Grafana.
 
 Erweiterung um einen Gassensor (MQ-135) zur Luftqualitätsmessung.
-Grafische Auswertung der Sensordaten
